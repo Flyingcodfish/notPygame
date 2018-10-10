@@ -4,8 +4,11 @@
 #include "DrawQ.cpp"
 #include <vector>
 #include "VectorMath.cpp"
+#include <iostream> //for sprintf
 
 int main(){
+	const bool DEBUG_ENABLED = false;
+
 	//open the game window
 	const int SCREEN_X = 300;
 	const int SCREEN_Y = 400;
@@ -13,9 +16,8 @@ int main(){
 			"Every Pinball is Water");
 	
 	window.setFramerateLimit(120);
-	Collision::DEBUG_ENABLED = true;
+	Collision::DEBUG_ENABLED = DEBUG_ENABLED;
 	Collision::DEBUG_WINDOW = &window;
-	bool DEBUG_ENABLED = true;
 	
 	DrawQ drawQ;
 	std::vector<sf::ConvexShape> terrainList;
@@ -45,16 +47,32 @@ int main(){
 	blGuard.setPointCount(5);
 	blGuard.setPoint(0, sf::Vector2f(0,0));
 	blGuard.setPoint(1, sf::Vector2f(0,85));
-	blGuard.setPoint(2, sf::Vector2f(130,85));
+	//blGuard.setPoint(2, sf::Vector2f(130,85));
+	blGuard.setPoint(2, sf::Vector2f(160,85));
 	blGuard.setPoint(3, sf::Vector2f(115,65));
 	blGuard.setPoint(4, sf::Vector2f(20, 5));
 	blGuard.setOrigin(5,80);
-	blGuard.setPosition(5,SCREEN_Y-5);
+	//blGuard.setPosition(5,SCREEN_Y-5);
+	blGuard.setPosition(5,SCREEN_Y-100);
 	blGuard.setFillColor(sf::Color::Green);
 	blGuard.setOutlineColor(sf::Color::Blue);
 	blGuard.setOutlineThickness(2);
 	drawQ.add(blGuard, DrawLayers::stage);
 	terrainList.push_back(blGuard);
+	
+	sf::ConvexShape ramp;
+	ramp.setPointCount(4);
+	ramp.setPoint(0, sf::Vector2f(160, 85));
+	ramp.setPoint(1, sf::Vector2f(260, -50));
+	ramp.setPoint(2, sf::Vector2f(130, 65));
+	ramp.setPoint(3, sf::Vector2f(115, 65));
+	ramp.setFillColor(sf::Color::Red);
+	ramp.setOutlineColor(sf::Color::Yellow);
+	ramp.setOutlineThickness(2);
+	ramp.setPosition(5, SCREEN_Y-180);
+	drawQ.add(ramp, DrawLayers::stage);
+	terrainList.push_back(ramp);
+	
 	
 	sf::ConvexShape brGuard;
 	brGuard.setPointCount(5);
@@ -71,6 +89,21 @@ int main(){
 	drawQ.add(brGuard, DrawLayers::stage);
 	terrainList.push_back(brGuard);
 	
+	sf::Text velText;
+	sf::Font titillium;
+	//initialize debug items
+	if (DEBUG_ENABLED){
+		
+		if (!titillium.loadFromFile("Assets/Titillium/Titillium-Regular.otf")){
+			std::cout << "Error: Could not read text file.\n";
+			return 1;
+		}
+		velText.setFont(titillium);
+		velText.setString("[Velocity not set]");
+		velText.setCharacterSize(15);
+		velText.setFillColor(sf::Color::White);
+	}
+	
 	//#############################
 	
 	sf::Vector2f gravity = sf::Vector2f(0.0f, 0.01f);
@@ -78,18 +111,18 @@ int main(){
 	sf::Vector2f prevBallPos;
 
 	
-	bool freeze = false;
+	bool freeze = false;//used in debugging; freezes position of ball
 	
 	while (window.isOpen()){
 		//drawing is done FIRST:
-		//screen is technically one frame behind logical values. bad for input.
-		//temporary measure, allows other drawers (like debug gizmos) to draw on top of things.
-		//need to improve drawing Q to fix this (allow it to hold line entries)
+		//screen is technically one frame behind stored values. creates perceived input delay.
+		//temporary(?) measure, allows other drawers (like debug gizmos) to draw on top of things.
+		//need to improve drawing Q to fix this (allow it to hold line/vertex-array entries)
+		//could also potentially just force debug gizmos onto another window
 		
 		window.clear();
 		//draw things
 		drawQ.drawToWindow(window);
-		
 		
 		//move ball
 		prevBallPos = ball.getPosition();
@@ -100,6 +133,15 @@ int main(){
 		
 		ball.setFillColor(sf::Color::Red);
 
+		//DEBUG: display ball velocity
+		if (DEBUG_ENABLED){
+			char charBuffer[100];
+			snprintf(charBuffer, sizeof(charBuffer), "%4.3f, %4.3f", ballVelocity.x, ballVelocity.y);
+			velText.setString(charBuffer);
+			velText.setPosition(1, 1);
+			window.draw(velText);
+		}
+		
 		
 		// check for collisions between terrain and ball
 		for (int i=0; i<terrainList.size(); i++){
@@ -110,11 +152,8 @@ int main(){
 				sf::Vector2f ballPos = ball.getPosition();				
 				ball.setPosition(colData.POI + (normalize(colData.normal) * (ball.getRadius() + 0.1f)));
 				
-				//freeze = true;
-				ball.setFillColor(sf::Color::White);
-				
 				//cancel all of ball's momentum normal to surface: inelastic collision
-				ballVelocity -= project(ballVelocity, colData.normal);				
+				ballVelocity -= project(ballVelocity, normalize(colData.normal));
 			}
 		}
 		

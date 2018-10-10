@@ -109,7 +109,7 @@ bool Collision::isShapeCollidingWithCircle(sf::ConvexShape shape, sf::CircleShap
 			poiCircle.setPosition(POI.x, POI.y);
 			DEBUG_WINDOW->draw(poiCircle);
 			
-			//plot our lines, NOT using the points above: checks our algebra.
+			//plot our lines, NOT using the points above: validates our algebra.
 			int screenX = (int)(DEBUG_WINDOW->getSize().x);
 			int step = screenX;
 			int N = screenX/step+1;	//+1 for point at zero
@@ -127,9 +127,9 @@ bool Collision::isShapeCollidingWithCircle(sf::ConvexShape shape, sf::CircleShap
 		//does this POI lie on the actual face (not just a projection of it)?
 		if (isPointInsideCorners(POI, thisPoint, prevPoint)){
 			//the moment of truth: is POI within the circle?
-			float dist = hypot(POI.x-cPos.x, POI.y-cPos.y); //hypot is from c++11
+			float dist = hypot(POI.x-cPos.x, POI.y-cPos.y);
 			if (circle.getRadius() >= dist){
-				colData.didHit = true; //TODO: circle and shape are overlapping a tiny bit
+				colData.didHit = true; //shapes are overlapping a tiny bit, circle should be ejected
 				colData.POI = POI;
 				colData.normal = sf::Vector2f(cPos.x - POI.x, cPos.y - POI.y);
 				return true;
