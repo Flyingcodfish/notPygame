@@ -6,9 +6,12 @@
 #include "VectorMath.cpp"
 #include <iostream> //for sprintf
 
-int main(){
-	const bool DEBUG_ENABLED = false;
-
+int main(int argc, char *argv[]){
+	bool DEBUG_ENABLED = false;
+	if (argc == 2 && argv[1][0] == '-' && argv[1][1] == 'd'){
+		DEBUG_ENABLED = true;
+	}
+	
 	//open the game window
 	const int SCREEN_X = 300;
 	const int SCREEN_Y = 400;
